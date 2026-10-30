@@ -1,0 +1,8 @@
+'use client';
+import { createContext,useContext,useEffect,useMemo,useState } from 'react';
+import type { Product } from '@/lib/catalog';
+type CartItem={key:string;product:Product;qty:number;choices:{group:string;choice:string;extra:number}[]};
+type CartCtx={items:CartItem[];add:(p:Product,choices:CartItem['choices'])=>void;remove:(key:string)=>void;setQty:(key:string,n:number)=>void;clear:()=>void;count:number;total:number};
+const C=createContext<CartCtx|null>(null);
+export function CartProvider({children}:{children:React.ReactNode}){const [items,setItems]=useState<CartItem[]>([]);const [ready,setReady]=useState(false);useEffect(()=>{try{const x=localStorage.getItem('ck-cart');if(x)setItems(JSON.parse(x))}catch{}setReady(true)},[]);useEffect(()=>{if(ready)localStorage.setItem('ck-cart',JSON.stringify(items))},[items,ready]);const value=useMemo(()=>({items,add:(p:Product,choices:CartItem['choices'])=>setItems(old=>{const key=p.id+'-'+choices.map(c=>c.choice).join('-');const found=old.find(i=>i.key===key);return found?old.map(i=>i.key===key?{...i,qty:i.qty+1}:i):[...old,{key,product:p,qty:1,choices}]}),remove:(key:string)=>setItems(old=>old.filter(i=>i.key!==key)),setQty:(key:string,n:number)=>setItems(old=>n<1?old.filter(i=>i.key!==key):old.map(i=>i.key===key?{...i,qty:n}:i)),clear:()=>setItems([]),count:items.reduce((s,i)=>s+i.qty,0),total:items.reduce((s,i)=>s+(i.product.price+i.choices.reduce((a,c)=>a+c.extra,0))*i.qty,0)}),[items]);return <C.Provider value={value}>{children}</C.Provider>}
+export function useCart(){const v=useContext(C);if(!v)throw new Error('useCart must be used inside CartProvider');return v;}

@@ -1,69 +1,47 @@
-# Cahaya Kuphi Resto & Cafe — ordering website starter
+# Cahaya Kuphi Resto & Cafe — ordering website
 
-Starter MVP for a bilingual (ID/EN) cafe ordering website using Next.js, TypeScript, Tailwind CSS and Supabase. Designed for deployment to Vercel.
+Next.js 14 + TypeScript + Tailwind + Supabase starter, prepared for Vercel deployment.
 
-## What's included
-- Responsive landing page, menu filtering, cart and checkout UI
-- Indonesian/English toggle
-- Product options with example price additions
-- Order API that saves to Supabase before redirecting to WhatsApp
-- Secure tracking-token concept (code + random token)
-- Initial database schema and sample menu seed
-- Initial admin dashboard placeholder and deployment configuration template
-
-## Important current limitations
-This is an initial development scaffold, not a finished production ordering system. Menu cards currently use a sample in-code catalog; database seed prices are examples. Product options shown in the demo UI are not yet server-priced from Supabase option tables. Delivery fee is not yet included in the persisted total, and the admin dashboard is only a placeholder. Inventory confirmation/cancellation transactions, complete server-side admin authorization/CRUD, payment verification UI, rate limiting, and scheduled expiry processing must be completed and tested before accepting real orders. The order API expires requests after 30 minutes as a provisional default; make this configurable before launch. Do not deploy as a live store until these items are implemented.
-
-## Requirements
-- Node.js 20+ recommended
-- Supabase project
-- Vercel account for deployment
-
-## Local setup
-1. Copy `.env.example` to `.env.local`.
-2. Add Supabase Project URL, anon key, and **server-only** service role key. Never expose the service role key in browser code.
-3. In Supabase SQL Editor, review and run `database/schema.sql`.
-4. Set `accepting_orders` only after checkout, admin auth, pricing, and stock controls are production-ready.
-5. Install and run:
-   ```bash
-   npm install
-   npm run dev
-   ```
-6. Visit `http://localhost:3000`.
-
-## Admin login (initial UI)
-
-The header includes a Login Admin link and `/login` uses Supabase Auth email/password. Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel, then create the single admin account in Supabase Auth (do not add public sign-up). The current dashboard is a protected UI scaffold only; server-side authorization and RLS policies must be completed before production.
-
-## Business configuration supplied by the owner
-- Admin WhatsApp (international format): `6282269696845`
-- Flat delivery fee: `Rp5.000`
-- Cafe address: `Sumber Batu, Meureubo, Aceh Barat`
-- Operating hours: every day, `09:00–12:00 WIB`
-- Vercel deployment: use a `*.vercel.app` subdomain first
-
-After `database/schema.sql`, run `database/production-config.sql` in Supabase SQL Editor to store these values. This migration deliberately keeps `accepting_orders = false` until the production acceptance tests pass. The current checkout route does not yet read the delivery fee from settings, so this SQL alone does not make delivery totals production-correct.
+## Business configuration
+- Name: Cahaya Kuphi Resto & Cafe
+- WhatsApp: `6282269696845`
+- Address: Sumber Batu, Meureubo, Aceh Barat
+- Delivery fee: Rp5.000 (read from `store_settings`)
+- Store hours configured in Supabase: daily 09:00–12:00 WIB
+- Public order acceptance must remain disabled until end-to-end checks are complete.
 
 ## Environment variables
+Set in Vercel → Project → Settings → Environment Variables for the environments you use:
 - `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase public/anon key
-- `SUPABASE_SERVICE_ROLE_KEY`: server-only privileged key
-- `NEXT_PUBLIC_ADMIN_WHATSAPP`: admin number in international format without `+`, e.g. `62812...` (fill only when known)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase publishable/anon key
+- `SUPABASE_SERVICE_ROLE_KEY`: server-only secret key. Never use the `NEXT_PUBLIC_` prefix for this key.
 
-## Vercel deployment
-Import the repository into Vercel, configure the same environment variables, deploy to a temporary `*.vercel.app` subdomain, and test with non-production orders first. Supabase database and storage are separate services from Vercel. Free-plan quotas and terms can change; review current provider limits before launch.
+Redeploy after changing environment variables. The admin account must be created manually in Supabase Authentication and its auth UID must be present as an active row in `public.admin_users`. No public sign-up flow is included.
 
-## Release status — NOT production-ready yet
-The supplied source code is still a development scaffold. Do not enable live ordering until all blockers below are resolved and tested. Configuring the business settings does not mean the site is deployed or connected to Supabase.
+## Database setup
+Use the supplied migrations in this order only if not already applied:
+1. `database/schema.sql` is the legacy starter schema and is **not compatible** with the database shape currently used by the project. Do not run it against the already-configured database.
+2. `cahaya-kuphi-align-existing-database.sql` (separate delivery file) adds product/category slugs, sample categories/products and `create_order_request`.
+3. `cahaya-kuphi-admin-orders-stock.sql` (separate delivery file) adds `admin_update_order_status`.
 
-## Before production launch
-- Implement real admin authentication and server-side authorization
-- Add and test RLS policies for public menu reads and admin-only changes
-- Recalculate all prices/options/delivery fee server-side from trusted database records
-- Add transaction/RPC for stock recheck + decrement when confirming orders; restore exactly once on cancellation
-- Implement expiry/cancellation server-side and protect against duplicate confirmations
-- Implement admin CRUD for products, variants, extras, stock, orders, settings and payment status
-- Ensure QRIS/bank transfer is marked paid only after manual verification
-- Configure the real WhatsApp admin number, delivery fee, cafe address, and opening hours
-- Add rate limiting, input validation, privacy notice, backups/export and end-to-end tests
-- Test mobile layout, concurrent stock confirmation, failed WhatsApp handoff, and expired orders
+Always back up the database first and inspect SQL before running. Do not run migrations twice if already applied; `CREATE OR REPLACE FUNCTION` is safe to replace that function, but seed/update statements may refresh the eight demo products. Replace demo data with the cafe's verified menu before launch.
+
+## Admin pages
+- `/login`: Supabase email/password login.
+- `/admin`: order list and status workflow.
+- `/admin/menu`: create menu items, edit prices and stock tracking, toggle availability. Server routes validate the Supabase access token and check active membership in `admin_users` before using the server-side service key.
+
+## Current limitations — NOT production-ready
+- The build and end-to-end flow have not been verified in this environment because dependency installation timed out.
+- Menu management currently supports base products only; product variants, option groups, extras/toppings, and per-variant inventory UI are not complete.
+- Payment verification UI and full reporting/settings CRUD are not complete.
+- The public catalog still contains sample in-code items; dynamic catalog wiring must be completed and checked against the product database before launch.
+- Rate limiting, expiry processing, payment workflows, production RLS/security review, and concurrent-stock acceptance tests remain required.
+- Do not enable real order acceptance until build, admin authorization, order creation/tracking, stock deduction/restoration, and payment verification are tested end to end.
+
+## Local development
+```bash
+npm install
+npm run dev
+```
+Use Node.js 20+. Do not commit `.env.local` or any secret key.

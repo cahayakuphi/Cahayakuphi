@@ -1,23 +1,23 @@
-# Production readiness status
+# Status kesiapan produksi — Cahaya Kuphi
 
-Status: **NOT READY FOR PUBLIC ORDERS**.
+Status: **belum siap menerima pesanan nyata**.
 
-Completed in this release-prep iteration:
-- Order API uses the current database column names (`price`, `name`, `active`, `customer_whatsapp`, `fulfillment_type`, etc.).
-- Server computes item prices from database base prices and validates any demo-catalog option delta rather than trusting client-supplied prices.
-- Delivery fee is read from `store_settings`; pickup has no delivery fee.
-- Order and order-item creation uses a database RPC so both inserts run in one transaction.
-- Tracking tokens remain random and only their SHA-256 hashes are stored.
-- Added `database/align-existing-database.sql` to add stable slugs, seed clearly labelled sample catalog rows, and create the atomic order RPC.
+## Yang sudah dikerjakan di paket ini
+- API checkout memakai kolom database aktual dan menghitung harga dari database, bukan menerima total dari browser.
+- Penyimpanan order dan order items dilakukan melalui RPC transaksional.
+- API admin memvalidasi token Supabase di server serta memeriksa `admin_users.active`.
+- Dashboard awal menampilkan pesanan dan mengirim perubahan status ke API server.
+- SQL tambahan menyediakan transisi status dengan penguncian pesanan, pengurangan stok saat konfirmasi, serta pengembalian stok saat pembatalan.
 
-Still required before production:
-- Run and verify `database/align-existing-database.sql` in the correct Supabase project.
-- Replace sample catalog rows and prices with the cafe's approved real menu.
-- Implement and server-protect admin order/menu/stock/settings CRUD; the current admin page is a placeholder.
-- Implement stock deduction/restoration atomically on admin confirmation/cancellation, including concurrency protections.
-- Implement rate limiting, input-size limits, and operational logging/monitoring for public endpoints.
-- Confirm environment variables, install dependencies, run a production build, and execute end-to-end tests against a non-production Supabase project.
-- Verify privacy, tracking UX, payment verification, and accessibility on mobile.
-- Keep `store_settings.accepting_orders = false` until all checks pass.
+## Wajib diuji sebelum produksi
+1. Jalankan `database/align-existing-database.sql` sekali jika belum pernah dijalankan, lalu `database/admin-orders-stock.sql`.
+2. Verifikasi kolom dan constraint tabel `stock_movements`, `orders`, `order_items`, dan status yang diizinkan di proyek Supabase yang sebenarnya.
+3. Tambahkan/konfirmasi seluruh menu, kategori, harga, foto, varian, opsi, extra, dan stok resmi. Produk contoh dalam SQL hanya data demo.
+4. Uji login admin dengan akun terdaftar dan akun non-admin; API harus menolak akun non-admin.
+5. Uji stok cukup/tidak cukup, dua konfirmasi bersamaan, pembatalan, dan pastikan stok tidak terpotong/dikembalikan dua kali.
+6. Uji checkout delivery/pickup, ongkir, pilihan menu, token pelacakan, dan data pelanggan.
+7. Lengkapi CRUD menu, pengaturan toko, laporan, serta verifikasi pembayaran transfer/QRIS.
+8. Jalankan `npm install` dan `npm run build`; hasil build belum diverifikasi dalam lingkungan ini.
+9. Pastikan `store_settings.accepting_orders=false` sampai semua uji selesai.
 
-No deployment has been performed. The app must not be advertised as production-ready yet.
+Jangan pernah mengisi `SUPABASE_SERVICE_ROLE_KEY` ke variabel `NEXT_PUBLIC_*` atau membagikan nilainya.
