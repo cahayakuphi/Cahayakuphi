@@ -1,15 +1,163 @@
-export type Product = { id:string; name:{id:string;en:string}; description:{id:string;en:string}; category:{id:string;en:string;name?:string}; imageUrl?:string|null; price:number; available?:boolean; tag?:string; options?: {id:string;required?:boolean;label:{id:string;en:string}; choices:{id:string;label:{id:string;en:string};extra:number}[]}[]; extras?: {id:string;required?:boolean;label:{id:string;en:string}; choices:{id:string;label:{id:string;en:string};extra:number}[]}[] };
+
+export type Product = {
+  id: string;
+  name: { id: string; en: string };
+  description: { id: string; en: string };
+  category: { id: string; en: string; name?: string };
+  imageUrl?: string | null;
+  price: number;
+  available?: boolean;
+  tag?: string;
+  options?: {
+    id: string;
+    required?: boolean;
+    label: { id: string; en: string };
+    choices: {
+      id: string;
+      label: { id: string; en: string };
+      extra: number;
+    }[];
+  }[];
+  extras?: {
+    id: string;
+    required?: boolean;
+    label: { id: string; en: string };
+    choices: {
+      id: string;
+      label: { id: string; en: string };
+      extra: number;
+    }[];
+  }[];
+};
+
 export const products: Product[] = [
-{id:'kopi-sanger',name:{id:'Kopi Sanger',en:'Sanger Coffee'},description:{id:'Kopi espresso dengan perpaduan susu yang lembut dan rasa kopi yang seimbang.',en:'Espresso blended with smooth milk for a balanced coffee flavour.'},category:{id:'Kopi',en:'Coffee'},price:18000,tag:'Favorit',options: [{
-  id: 'serving',
-  label: { id: 'Penyajian', en: 'Serving' },
-  choices: [{id:'hot',label:{id:'Panas',en:'Hot'},extra:0},{id:'ice',label:{id:'Dingin',en:'Iced'},extra:2000}]}]},
-{id:'americano',name:{id:'Americano',en:'Americano'},description:{id:'Kopi hitam dengan karakter rasa yang bersih dan menyegarkan.',en:'Clean, refreshing black coffee with a bold character.'},category:{id:'Kopi',en:'Coffee'},price:16000,options:[{label:{id:'Penyajian',en:'Serving'},choices:[{id:'hot',label:{id:'Panas',en:'Hot'},extra:0},{id:'ice',label:{id:'Dingin',en:'Iced'},extra:2000}]}]},
-{id:'lemon-tea',name:{id:'Lemon Tea',en:'Lemon Tea'},description:{id:'Teh dengan sentuhan lemon yang segar, cocok dinikmati kapan saja.',en:'Refreshing tea with a bright hint of lemon, perfect any time.'},category:{id:'Teh',en:'Tea'},price:12000,options:[{label:{id:'Penyajian',en:'Serving'},choices:[{id:'ice',label:{id:'Dingin',en:'Iced'},extra:0},{id:'hot',label:{id:'Panas',en:'Hot'},extra:0}]}]},
-{id:'jus-alpukat',name:{id:'Jus Alpukat',en:'Avocado Juice'},description:{id:'Jus alpukat lembut dengan rasa creamy dan nikmat.',en:'Creamy avocado juice with a rich, smooth taste.'},category:{id:'Jus',en:'Juice'},price:18000},
-{id:'ayam-penyet',name:{id:'Ayam Penyet',en:'Smashed Fried Chicken'},description:{id:'Ayam goreng dengan sambal dan pelengkap yang menggugah selera.',en:'Fried chicken served with sambal and tasty accompaniments.'},category:{id:'Makanan',en:'Meals'},price:25000,tag:'Favorit',options:[{label:{id:'Level sambal',en:'Sambal level'},choices:[{id:'regular',label:{id:'Biasa',en:'Regular'},extra:0},{id:'extra',label:{id:'Ekstra pedas',en:'Extra spicy'},extra:0}]}]},
-{id:'nasi-goreng-kampung',name:{id:'Nasi Goreng Kampung',en:'Village-Style Fried Rice'},description:{id:'Nasi goreng berbumbu khas dengan cita rasa gurih dan aroma yang menggoda.',en:'Seasoned fried rice with savoury flavour and an inviting aroma.'},category:{id:'Makanan',en:'Meals'},price:22000},
-{id:'kentang-goreng',name:{id:'Kentang Goreng',en:'French Fries'},description:{id:'Kentang goreng renyah, teman santai untuk segala suasana.',en:'Crispy fries, a perfect snack for any occasion.'},category:{id:'Camilan',en:'Snacks'},price:15000},
-{id:'strawberry-squash',name:{id:'Strawberry Squash',en:'Strawberry Squash'},description:{id:'Minuman soda dengan rasa stroberi yang manis dan menyegarkan.',en:'A fizzy strawberry drink that is sweet and refreshing.'},category:{id:'Squash',en:'Squash'},price:16000}
+  {
+    id: 'kopi-sanger',
+    name: { id: 'Kopi Sanger', en: 'Sanger Coffee' },
+    description: {
+      id: 'Kopi espresso dengan perpaduan susu yang lembut dan rasa kopi yang seimbang.',
+      en: 'Espresso blended with smooth milk for a balanced coffee flavour.'
+    },
+    category: { id: 'Kopi', en: 'Coffee' },
+    price: 18000,
+    tag: 'Favorit',
+    options: [
+      {
+        id: 'serving',
+        label: { id: 'Penyajian', en: 'Serving' },
+        choices: [
+          { id: 'hot', label: { id: 'Panas', en: 'Hot' }, extra: 0 },
+          { id: 'ice', label: { id: 'Dingin', en: 'Iced' }, extra: 2000 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'americano',
+    name: { id: 'Americano', en: 'Americano' },
+    description: {
+      id: 'Kopi hitam dengan karakter rasa yang bersih dan menyegarkan.',
+      en: 'Clean, refreshing black coffee with a bold character.'
+    },
+    category: { id: 'Kopi', en: 'Coffee' },
+    price: 16000,
+    options: [
+      {
+        id: 'serving',
+        label: { id: 'Penyajian', en: 'Serving' },
+        choices: [
+          { id: 'hot', label: { id: 'Panas', en: 'Hot' }, extra: 0 },
+          { id: 'ice', label: { id: 'Dingin', en: 'Iced' }, extra: 2000 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'lemon-tea',
+    name: { id: 'Lemon Tea', en: 'Lemon Tea' },
+    description: {
+      id: 'Teh dengan sentuhan lemon yang segar, cocok dinikmati kapan saja.',
+      en: 'Refreshing tea with a bright hint of lemon, perfect any time.'
+    },
+    category: { id: 'Teh', en: 'Tea' },
+    price: 12000,
+    options: [
+      {
+        id: 'serving',
+        label: { id: 'Penyajian', en: 'Serving' },
+        choices: [
+          { id: 'ice', label: { id: 'Dingin', en: 'Iced' }, extra: 0 },
+          { id: 'hot', label: { id: 'Panas', en: 'Hot' }, extra: 0 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'jus-alpukat',
+    name: { id: 'Jus Alpukat', en: 'Avocado Juice' },
+    description: {
+      id: 'Jus alpukat lembut dengan rasa creamy dan nikmat.',
+      en: 'Creamy avocado juice with a rich, smooth taste.'
+    },
+    category: { id: 'Jus', en: 'Juice' },
+    price: 18000
+  },
+  {
+    id: 'ayam-penyet',
+    name: { id: 'Ayam Penyet', en: 'Smashed Fried Chicken' },
+    description: {
+      id: 'Ayam goreng dengan sambal dan pelengkap yang menggugah selera.',
+      en: 'Fried chicken served with sambal and tasty accompaniments.'
+    },
+    category: { id: 'Makanan', en: 'Meals' },
+    price: 25000,
+    tag: 'Favorit',
+    options: [
+      {
+        id: 'sambal-level',
+        label: { id: 'Level sambal', en: 'Sambal level' },
+        choices: [
+          { id: 'regular', label: { id: 'Biasa', en: 'Regular' }, extra: 0 },
+          { id: 'extra', label: { id: 'Ekstra pedas', en: 'Extra spicy' }, extra: 0 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'nasi-goreng-kampung',
+    name: { id: 'Nasi Goreng Kampung', en: 'Village-Style Fried Rice' },
+    description: {
+      id: 'Nasi goreng berbumbu khas dengan cita rasa gurih dan aroma yang menggoda.',
+      en: 'Seasoned fried rice with savoury flavour and an inviting aroma.'
+    },
+    category: { id: 'Makanan', en: 'Meals' },
+    price: 22000
+  },
+  {
+    id: 'kentang-goreng',
+    name: { id: 'Kentang Goreng', en: 'French Fries' },
+    description: {
+      id: 'Kentang goreng renyah, teman santai untuk segala suasana.',
+      en: 'Crispy fries, a perfect snack for any occasion.'
+    },
+    category: { id: 'Camilan', en: 'Snacks' },
+    price: 15000
+  },
+  {
+    id: 'strawberry-squash',
+    name: { id: 'Strawberry Squash', en: 'Strawberry Squash' },
+    description: {
+      id: 'Minuman soda dengan rasa stroberi yang manis dan menyegarkan.',
+      en: 'A fizzy strawberry drink that is sweet and refreshing.'
+    },
+    category: { id: 'Squash', en: 'Squash' },
+    price: 16000
+  }
 ];
-export const formatIDR=(n:number)=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n);
+
+export const formatIDR = (n: number) =>
+  new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0
+  }).format(n);
