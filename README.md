@@ -21,8 +21,9 @@ Redeploy after changing environment variables. The admin account must be created
 ## Database setup
 Use the supplied migrations in this order only if not already applied:
 1. `database/schema.sql` is the legacy starter schema and is **not compatible** with the database shape currently used by the project. Do not run it against the already-configured database.
-2. `cahaya-kuphi-align-existing-database.sql` (separate delivery file) adds product/category slugs, sample categories/products and `create_order_request`.
-3. `cahaya-kuphi-admin-orders-stock.sql` (separate delivery file) adds `admin_update_order_status`.
+2. `database/fix-menu-catalog.sql` ensures catalog slug/photo columns and fills missing slugs.
+3. `database/menu-options-migration.sql` creates variant/extra option tables.
+4. `database/align-existing-database.sql` and `database/admin-orders-stock.sql` are historical alignment/order migrations; inspect current database state and do not rerun blindly.
 
 Always back up the database first and inspect SQL before running. Do not run migrations twice if already applied; `CREATE OR REPLACE FUNCTION` is safe to replace that function, but seed/update statements may refresh the eight demo products. Replace demo data with the cafe's verified menu before launch.
 
@@ -35,7 +36,7 @@ Always back up the database first and inspect SQL before running. Do not run mig
 - The build and end-to-end flow have not been verified in this environment because dependency installation timed out.
 - Menu management currently supports base products only; product variants, option groups, extras/toppings, and per-variant inventory UI are not complete.
 - Payment verification UI and full reporting/settings CRUD are not complete.
-- The public catalog still contains sample in-code items; dynamic catalog wiring must be completed and checked against the product database before launch.
+- The public catalog is loaded from Supabase through `/api/menu`. If the options migration is absent, base products can still display without variants/extras.
 - Rate limiting, expiry processing, payment workflows, production RLS/security review, and concurrent-stock acceptance tests remain required.
 - Do not enable real order acceptance until build, admin authorization, order creation/tracking, stock deduction/restoration, and payment verification are tested end to end.
 
@@ -45,3 +46,7 @@ npm install
 npm run dev
 ```
 Use Node.js 20+. Do not commit `.env.local` or any secret key.
+
+## Admin diagnostics update
+
+Lihat `release/ADMIN-DIAGNOSTICS-AND-DEPLOY.md` untuk pemeriksaan environment Vercel dan akses admin. Endpoint `/api/admin/health` membedakan konfigurasi server, sesi, dan hak akses tanpa membocorkan secret. Untuk memeriksa skema database yang sudah ada tanpa mengubahnya, jalankan `database/diagnose-existing-schema.sql` dan gunakan hasilnya sebelum menerapkan migrasi penyelarasan.

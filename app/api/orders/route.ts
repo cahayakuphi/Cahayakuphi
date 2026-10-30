@@ -108,7 +108,7 @@ export async function POST(req: Request) {
       delivery_landmark: mode === 'delivery' ? clean(customer.landmark, 250) || null : null,
       payment_method: customer.payment,
       payment_status: 'unpaid',
-      order_status: 'pending_confirmation',
+      order_status: 'pending',
       subtotal,
       delivery_fee: deliveryFee,
       total_amount: total,

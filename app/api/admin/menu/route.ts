@@ -11,12 +11,14 @@ async function requireAdmin(req: Request) {
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
   const db = serverDb();
-  if (!url || !anon || !db || !token) return { error: 'Sesi admin tidak valid.', status: 401 as const };
+  if (!url || !anon || !db) return { error: 'Konfigurasi server Supabase belum lengkap. Periksa NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, dan SUPABASE_SERVICE_ROLE_KEY di Vercel.', status: 503 as const };
+  if (!token) return { error: 'Token sesi tidak ditemukan. Silakan login ulang.', status: 401 as const };
   const authClient = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await authClient.auth.getUser(token);
   if (error || !data.user) return { error: 'Sesi admin tidak valid.', status: 401 as const };
   const { data: admin, error: adminError } = await db.from('admin_users').select('user_id').eq('user_id', data.user.id).eq('active', true).maybeSingle();
-  if (adminError || !admin) return { error: 'Akun ini tidak memiliki akses admin.', status: 403 as const };
+  if (adminError) return { error: 'Database tidak dapat memeriksa hak akses admin. Periksa tabel admin_users dan log Supabase.', status: 500 as const };
+  if (!admin) return { error: 'Akun ini belum terdaftar sebagai admin aktif di tabel admin_users.', status: 403 as const };
   return { db };
 }
 const clean = (v: unknown, max = 160) => typeof v === 'string' ? v.trim().slice(0, max) : '';
@@ -35,6 +37,15 @@ export async function POST(req: Request) {
   if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
   let b: any;
   try { b = await req.json(); } catch { return NextResponse.json({ error: 'Format data tidak valid.' }, { status: 400 }); }
+  if (b?.type === 'category') {
+    const name = clean(b?.name), nameEn = clean(b?.name_en), slug = slugify(clean(b?.slug) || name);
+    if (!name || !slug) return NextResponse.json({ error: 'Nama kategori wajib diisi.' }, { status: 400 });
+    const { data: duplicate } = await auth.db.from('categories').select('id').eq('slug', slug).maybeSingle();
+    if (duplicate) return NextResponse.json({ error: 'Slug kategori sudah digunakan.' }, { status: 409 });
+    const { data, error } = await auth.db.from('categories').insert({ name, name_en: nameEn || null, slug, active: true }).select('id,name,name_en,slug,active').single();
+    if (error) return NextResponse.json({ error: 'Kategori gagal ditambahkan.' }, { status: 500 });
+    return NextResponse.json({ category: data }, { status: 201 });
+  }
   const name = clean(b?.name), nameEn = clean(b?.name_en), categoryId = clean(b?.category_id, 64);
   const price = Number(b?.price);
   if (!name || !nameEn || !/^[0-9a-f-]{36}$/i.test(categoryId) || !Number.isSafeInteger(price) || price < 0 || price > 100000000) {
@@ -57,7 +68,18 @@ export async function PATCH(req: Request) {
   let b: any;
   try { b = await req.json(); } catch { return NextResponse.json({ error: 'Format data tidak valid.' }, { status: 400 }); }
   const id = clean(b?.id, 64);
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: 'ID menu tidak valid.' }, { status: 400 });
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: 'ID data tidak valid.' }, { status: 400 });
+  if (b?.type === 'category') {
+    const patchCategory: Record<string, unknown> = {};
+    if (typeof b?.active === 'boolean') patchCategory.active = b.active;
+    if (b?.name !== undefined) { const v = clean(b.name); if (!v) return NextResponse.json({ error: 'Nama kategori wajib diisi.' }, { status: 400 }); patchCategory.name = v; }
+    if (b?.name_en !== undefined) patchCategory.name_en = clean(b.name_en) || null;
+    if (!Object.keys(patchCategory).length) return NextResponse.json({ error: 'Tidak ada perubahan.' }, { status: 400 });
+    const { data, error } = await auth.db.from('categories').update(patchCategory).eq('id', id).select('id,name,name_en,active').maybeSingle();
+    if (error) return NextResponse.json({ error: 'Kategori gagal diperbarui.' }, { status: 500 });
+    if (!data) return NextResponse.json({ error: 'Kategori tidak ditemukan.' }, { status: 404 });
+    return NextResponse.json({ category: data });
+  }
   const patch: Record<string, unknown> = {};
   if (typeof b?.active === 'boolean') patch.active = b.active;
   if (b?.image_url !== undefined) { const image = clean(b.image_url, 2000); if (image && !/^https:\/\//i.test(image)) return NextResponse.json({ error: 'URL foto harus menggunakan HTTPS.' }, { status: 400 }); patch.image_url = image || null; }

@@ -9,7 +9,8 @@ async function requireAdmin(req: Request) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL, anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const auth = req.headers.get('authorization') || '', token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   const db = serverDb();
-  if (!url || !anon || !db || !token) return { error: 'Sesi admin tidak valid.', status: 401 as const };
+  if (!url || !anon || !db) return { error: 'Konfigurasi server Supabase belum lengkap. Periksa NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, dan SUPABASE_SERVICE_ROLE_KEY di Vercel.', status: 503 as const };
+  if (!token) return { error: 'Token sesi tidak ditemukan. Silakan login ulang.', status: 401 as const };
   const authClient = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await authClient.auth.getUser(token);
   if (error || !data.user) return { error: 'Sesi admin tidak valid.', status: 401 as const };
@@ -35,5 +36,5 @@ export async function GET(req: Request) {
   const byStatus: Record<string, number> = {};
   for (const order of rows as any[]) byStatus[order.order_status] = (byStatus[order.order_status] || 0) + 1;
   const revenue = completed.reduce((sum: number, o: any) => sum + (Number(o.total_amount) || 0), 0);
-  return NextResponse.json({ period: { from, to }, summary: { orderCount: rows.length, completedCount: completed.length, cancelledCount: rows.filter((o: any) => ['cancelled','expired'].includes(o.order_status)).length, pendingCount: rows.filter((o: any) => o.order_status === 'pending_confirmation').length, revenue, averageOrder: completed.length ? Math.round(revenue / completed.length) : 0, paidCount: completed.filter((o: any) => o.payment_status === 'paid').length }, byStatus, topProducts: [...productMap.values()].sort((a,b)=>b.quantity-a.quantity).slice(0,20), recentCompleted: completed.slice(0,20).map((o:any)=>({orderCode:o.order_code,createdAt:o.created_at,total:o.total_amount,paymentStatus:o.payment_status,paymentMethod:o.payment_method})) }, { headers: { 'Cache-Control': 'no-store' } });
+  return NextResponse.json({ period: { from, to }, summary: { orderCount: rows.length, completedCount: completed.length, cancelledCount: rows.filter((o: any) => ['cancelled','expired'].includes(o.order_status)).length, pendingCount: rows.filter((o: any) => o.order_status === 'pending').length, revenue, averageOrder: completed.length ? Math.round(revenue / completed.length) : 0, paidCount: completed.filter((o: any) => o.payment_status === 'paid').length }, byStatus, topProducts: [...productMap.values()].sort((a,b)=>b.quantity-a.quantity).slice(0,20), recentCompleted: completed.slice(0,20).map((o:any)=>({orderCode:o.order_code,createdAt:o.created_at,total:o.total_amount,paymentStatus:o.payment_status,paymentMethod:o.payment_method})) }, { headers: { 'Cache-Control': 'no-store' } });
 }

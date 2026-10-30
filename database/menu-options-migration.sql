@@ -47,6 +47,7 @@ create table if not exists public.product_extra_options (
 create index if not exists product_variants_product_id_idx on public.product_variants(product_id);
 create index if not exists variant_options_variant_id_idx on public.variant_options(variant_id);
 create index if not exists product_extras_product_id_idx on public.product_extras(product_id);
+alter table public.product_extra_options add column if not exists sort_order integer not null default 0;
 create index if not exists product_extra_options_extra_id_idx on public.product_extra_options(extra_id);
 
 alter table public.product_variants enable row level security;

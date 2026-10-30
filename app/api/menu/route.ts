@@ -25,15 +25,22 @@ export async function GET() {
 
   const rows = (data || []).filter((p: any) => p.categories?.active !== false);
   const productIds = rows.map((p: any) => p.id);
-  const [{ data: variantRows, error: variantError }, { data: extraRows, error: extraError }] = productIds.length
-    ? await Promise.all([
-        db.from('product_variants').select('id,product_id,name_id,name_en,is_required,sort_order,variant_options(id,label_id,label_en,price_delta,is_active,sort_order)').in('product_id', productIds).order('sort_order'),
-        db.from('product_extras').select('id,product_id,name_id,name_en,is_required,sort_order,product_extra_options(id,label_id,label_en,price_delta,is_active)').in('product_id', productIds).order('sort_order'),
-      ])
-    : [{ data: [], error: null }, { data: [], error: null }];
-  if (variantError || extraError) {
-    console.error('Menu options query failed:', variantError?.message || extraError?.message);
-    return NextResponse.json({ error: 'Pilihan menu sedang tidak tersedia.' }, { status: 503 });
+  // The public catalogue must remain usable even before optional variant/extra
+  // tables are migrated. Option configuration is loaded when available.
+  let variantRows: any[] = [];
+  let extraRows: any[] = [];
+  if (productIds.length) {
+    const [variants, extras] = await Promise.all([
+      db.from('product_variants').select('id,product_id,name_id,name_en,is_required,sort_order,variant_options(id,label_id,label_en,price_delta,is_active,sort_order)').in('product_id', productIds).order('sort_order'),
+      db.from('product_extras').select('id,product_id,name_id,name_en,is_required,sort_order,product_extra_options(id,label_id,label_en,price_delta,is_active)').in('product_id', productIds).order('sort_order'),
+    ]);
+    if (variants.error || extras.error) {
+      // Do not turn a missing optional options migration into a blank menu.
+      console.warn('Menu options unavailable; serving base catalogue:', variants.error?.message || extras.error?.message);
+    } else {
+      variantRows = variants.data || [];
+      extraRows = extras.data || [];
+    }
   }
   const categories = Array.from(new Map(rows.map((p: any) => [p.category_id, {
     id: p.category_id,
@@ -49,15 +56,15 @@ export async function GET() {
     price: p.price,
     imageUrl: p.image_url || null,
     available: !p.track_stock || p.stock_quantity > 0,
-    options: (variantRows || []).filter((g: any) => g.product_id === p.id).map((g: any) => ({
+    options: variantRows.filter((g: any) => g.product_id === p.id).map((g: any) => ({
       id: g.id, required: g.is_required,
       label: { id: g.name_id, en: g.name_en || g.name_id },
       choices: (g.variant_options || []).filter((o: any) => o.is_active).sort((a: any,b: any) => a.sort_order-b.sort_order).map((o: any) => ({ id: o.id, label: { id: o.label_id, en: o.label_en || o.label_id }, extra: Number(o.price_delta || 0) })),
     })),
-    extras: (extraRows || []).filter((g: any) => g.product_id === p.id).map((g: any) => ({
+    extras: extraRows.filter((g: any) => g.product_id === p.id).map((g: any) => ({
       id: g.id, required: g.is_required,
       label: { id: g.name_id, en: g.name_en || g.name_id },
-      choices: (g.product_extra_options || []).filter((o: any) => o.is_active).map((o: any) => ({ id: o.id, label: { id: o.label_id, en: o.label_en || o.label_id }, extra: Number(o.price_delta || 0) })),
+      choices: (g.product_extra_options || []).filter((o: any) => o.is_active).sort((a: any,b: any) => (a.sort_order || 0)-(b.sort_order || 0)).map((o: any) => ({ id: o.id, label: { id: o.label_id, en: o.label_en || o.label_id }, extra: Number(o.price_delta || 0) })),
     })),
   }));
 

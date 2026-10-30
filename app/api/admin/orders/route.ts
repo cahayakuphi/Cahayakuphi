@@ -9,12 +9,14 @@ async function requireAdmin(req: Request) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL, anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const auth = req.headers.get('authorization') || '', token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   const db = serverDb();
-  if (!url || !anon || !db || !token) return { error: 'Sesi admin tidak valid.', status: 401 as const };
+  if (!url || !anon || !db) return { error: 'Konfigurasi server Supabase belum lengkap. Periksa NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, dan SUPABASE_SERVICE_ROLE_KEY di Vercel.', status: 503 as const };
+  if (!token) return { error: 'Token sesi tidak ditemukan. Silakan login ulang.', status: 401 as const };
   const authClient = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: userData, error: authError } = await authClient.auth.getUser(token);
   if (authError || !userData.user) return { error: 'Sesi admin tidak valid.', status: 401 as const };
   const { data: admin, error } = await db.from('admin_users').select('user_id').eq('user_id', userData.user.id).eq('active', true).maybeSingle();
-  if (error || !admin) return { error: 'Akun ini tidak memiliki akses admin.', status: 403 as const };
+  if (error) return { error: 'Database tidak dapat memeriksa hak akses admin. Periksa tabel admin_users dan log Supabase.', status: 500 as const };
+  if (!admin) return { error: 'Akun ini belum terdaftar sebagai admin aktif di tabel admin_users.', status: 403 as const };
   return { db, userId: userData.user.id };
 }
 export async function GET(req: Request) {
@@ -30,7 +32,7 @@ export async function PATCH(req: Request) {
   let body: any;
   try { body = await req.json(); } catch { return NextResponse.json({ error: 'Format permintaan tidak valid.' }, { status: 400 }); }
   const id = typeof body?.orderId === 'string' ? body.orderId : '', status = typeof body?.status === 'string' ? body.status : '';
-  const allowed = ['confirmed', 'processing', 'ready_for_pickup', 'out_for_delivery', 'completed', 'cancelled'];
+  const allowed = ['confirmed', 'preparing', 'ready', 'completed', 'cancelled'];
   if (!/^[0-9a-f-]{36}$/i.test(id) || !allowed.includes(status)) return NextResponse.json({ error: 'Status atau pesanan tidak valid.' }, { status: 400 });
   const { data, error } = await auth.db.rpc('admin_update_order_status', { p_order_id: id, p_new_status: status, p_admin_user_id: auth.userId });
   if (error) {
