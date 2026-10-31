@@ -30,7 +30,7 @@ export async function GET(req: Request) {
   if (error) return NextResponse.json({ error: 'Menu gagal dimuat. Pastikan kolom slug sudah ditambahkan.' }, { status: 500 });
   const { data: categories, error: categoryError } = await auth.db.from('categories').select('id,slug,name,name_en,active').order('sort_order');
   if (categoryError) return NextResponse.json({ error: 'Kategori gagal dimuat.' }, { status: 500 });
-  return NextResponse.json({ products: data || [], categories: categories || [] });
+  return NextResponse.json({ products: data || [], categories: categories || [] }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
 }
 export async function POST(req: Request) {
   const auth = await requireAdmin(req);

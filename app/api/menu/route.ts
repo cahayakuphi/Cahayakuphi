@@ -56,11 +56,7 @@ export async function GET() {
     price: p.price,
     imageUrl: p.image_url || null,
     available: !p.track_stock || p.stock_quantity > 0,
-    options: variantRows.filter((g: any) => g.product_id === p.id).map((g: any) => ({
-      id: g.id, required: g.is_required,
-      label: { id: g.name_id, en: g.name_en || g.name_id },
-      choices: (g.variant_options || []).filter((o: any) => o.is_active).sort((a: any,b: any) => a.sort_order-b.sort_order).map((o: any) => ({ id: o.id, label: { id: o.label_id, en: o.label_en || o.label_id }, extra: Number(o.price_delta || 0) })),
-    })),
+    options: (() => { const choices = variantRows.filter((g: any) => g.product_id === p.id).flatMap((g: any) => (g.variant_options || []).filter((o: any) => o.is_active).sort((a: any,b: any) => (a.sort_order||0)-(b.sort_order||0)).map((o: any) => ({ id: o.id, groupId: g.id, label: { id: o.label_id, en: o.label_en || o.label_id }, extra: Number(o.price_delta || 0) }))); return choices.length ? [{ id: `variants-${p.id}`, required: true, label: { id: 'Varian', en: 'Variant' }, choices }] : []; })(),
     extras: extraRows.filter((g: any) => g.product_id === p.id).map((g: any) => ({
       id: g.id, required: g.is_required,
       label: { id: g.name_id, en: g.name_en || g.name_id },

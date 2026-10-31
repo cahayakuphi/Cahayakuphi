@@ -3,3 +3,35 @@
 @tailwind utilities;
 :root{color-scheme:light}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#fffaf5;color:#3a2a20;font-family:Arial,Helvetica,sans-serif}a{text-decoration:none;color:inherit}button,input,textarea,select{font:inherit}.container{width:min(1120px,calc(100% - 36px));margin-inline:auto}.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:999px;padding:.82rem 1.2rem;font-weight:700;transition:.2s}.btn-primary{background:#a85f32;color:white}.btn-primary:hover{background:#874722}.btn-secondary{border:1px solid #f0c9a8;background:#fffaf5}.eyebrow{text-transform:uppercase;letter-spacing:.18em;font-size:.72rem;font-weight:800;color:#a9764a}.section-title{font-family:Georgia,serif;font-size:clamp(2rem,4vw,3rem);line-height:1.08;letter-spacing:-.04em}.card{background:#fff;border:1px solid #efe4d8;border-radius:22px;overflow:hidden}.muted{color:#806f62}.input{width:100%;border:1px solid #e2d4c7;background:white;border-radius:12px;padding:12px 14px;outline:none}.input:focus{border-color:#a9764a;box-shadow:0 0 0 3px #a9764a20}.pill{display:inline-flex;align-items:center;border-radius:999px;background:#ffead9;padding:5px 10px;font-size:.78rem;font-weight:700;color:#a85f32}
 :focus-visible{outline:3px solid #e6a16f;outline-offset:2px}::selection{background:#ffd9bd;color:#4a2b1b}.btn-primary{background:#b96838;color:#fff}.btn-primary:hover{background:#99512d}.btn-secondary{border-color:#f0c9a8;background:#fffdfb}.card{border-color:#f3e3d5;box-shadow:0 8px 24px rgba(139,84,48,.045)}.input:focus{border-color:#d98b5b;box-shadow:0 0 0 3px #d98b5b22}
+
+/* App-like storefront experience */
+.menu-tools{position:relative}
+.search-field{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:0 16px;border:1px solid #ead8c8;border-radius:17px;background:#fff;box-shadow:0 5px 18px rgba(102,65,39,.055);color:#9a6a4a}
+.search-field:focus-within{border-color:#c77b4c;box-shadow:0 0 0 4px rgba(199,123,76,.12)}
+.search-field input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#3a2a20;font-size:14px}
+.search-field input::placeholder{color:#a8988b}
+.search-field button{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#f8eee6;color:#795239}
+.category-scroller{display:flex;gap:9px;overflow-x:auto;padding:2px 1px 8px;scrollbar-width:none}
+.category-scroller::-webkit-scrollbar{display:none}
+.category-chip{flex:0 0 auto;border:1px solid #eadfd4;border-radius:999px;background:#fff;padding:10px 16px;color:#725640;font-size:13px;font-weight:700;white-space:nowrap;transition:background .18s,border-color .18s}
+.category-chip.active{border-color:#9b5732;background:#9b5732;color:white;box-shadow:0 4px 12px rgba(155,87,50,.2)}
+.empty-search{display:flex;flex-direction:column;align-items:center;gap:9px;padding:42px 18px;border:1px dashed #e5d2c0;border-radius:22px;background:#fff;color:#8b7564;text-align:center}
+.empty-search strong{color:#4b3527}
+.mobile-nav{display:none}
+@media(max-width:767px){
+  body{padding-bottom:76px}
+  .container{width:min(100% - 28px,1120px)}
+  .mobile-nav{position:fixed;z-index:60;right:0;bottom:0;left:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:8px 8px calc(8px + env(safe-area-inset-bottom));border-top:1px solid #eee0d3;background:rgba(255,252,248,.96);backdrop-filter:blur(18px);box-shadow:0 -8px 24px rgba(68,42,25,.08)}
+  .mobile-nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:48px;color:#917d6e;font-size:10px;font-weight:700}
+  .mobile-nav-item.active{color:#9b5732}
+  .mobile-nav-icon{position:relative;display:grid;place-items:center;width:30px;height:25px}
+  .mobile-nav-icon i{position:absolute;top:-5px;right:-8px;display:grid;min-width:16px;height:16px;place-items:center;border-radius:999px;background:#b96838;padding:0 4px;color:white;font-size:9px;font-style:normal}
+  .menu-tools{margin-top:18px}
+  .card{border-radius:18px}
+  .card .p-5{padding:12px}
+  .card .h-44{height:132px}
+  .card .min-h-\[48px\]{min-height:42px}
+  .card .btn{gap:5px;border-radius:12px;padding:9px 11px}
+  .card strong{font-size:13px}
+  .category-chip{padding:9px 14px}
+}

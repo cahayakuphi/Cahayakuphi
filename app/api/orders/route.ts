@@ -64,7 +64,8 @@ export async function POST(req: Request) {
       const productExtras = (extraGroups || []).filter((g: any) => g.product_id === product.id);
       const submitted = item.choices as Array<{kind?: string;group?: string;choice?: string}>;
       const seen = new Set<string>();
-      let optionDelta = 0;
+      let extraDelta = 0;
+      let selectedVariantPrice: number | null = null;
       const optionSnapshot: unknown[] = [];
       for (const choice of submitted) {
         const groupId = clean(choice?.group, 80);
@@ -76,17 +77,16 @@ export async function POST(req: Request) {
         const allowedChoice: any = optionTable?.find((o: any) => o.id === choiceId && o.is_active);
         if (!group || !allowedChoice || seen.has(`${kind}:${groupId}`) && kind === 'variant') return jsonError('Pilihan menu tidak valid. Silakan perbarui keranjang.', 400);
         seen.add(`${kind}:${groupId}`);
-        const delta = Number(allowedChoice.price_delta || 0);
-        optionDelta += delta;
-        optionSnapshot.push({ kind, group_id: groupId, group_name: group.name_id, choice_id: choiceId, choice_name: allowedChoice.label_id, extra: delta });
+        const amount = Number(allowedChoice.price_delta || 0);
+        if (kind === 'variant') selectedVariantPrice = amount; else extraDelta += amount;
+        optionSnapshot.push({ kind, group_id: groupId, group_name: kind === 'variant' ? 'Varian' : group.name_id, choice_id: choiceId, choice_name: allowedChoice.label_id, price: amount, extra: kind === 'extra' ? amount : 0 });
       }
-      for (const group of productVariants) {
-        if (group.is_required && !seen.has(`variant:${group.id}`)) return jsonError('Lengkapi pilihan varian menu terlebih dahulu.', 400);
-      }
+      const hasSelectedVariant = submitted.some((choice: any) => choice?.kind === 'variant');
+      if (productVariants.some((group: any) => group.is_required) && !hasSelectedVariant) return jsonError('Lengkapi pilihan varian menu terlebih dahulu.', 400);
       for (const group of productExtras) {
         if (group.is_required && !seen.has(`extra:${group.id}`)) return jsonError('Pilih tambahan menu yang diwajibkan.', 400);
       }
-      const unitPrice = Number(product.price) + optionDelta;
+      const unitPrice = (selectedVariantPrice ?? Number(product.price)) + extraDelta;
       const lineTotal = unitPrice * item.quantity;
       if (!Number.isSafeInteger(unitPrice) || !Number.isSafeInteger(lineTotal) || lineTotal < 0) return jsonError('Harga menu tidak valid.', 400);
       subtotal += lineTotal;
