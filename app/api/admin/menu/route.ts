@@ -107,7 +107,7 @@ export async function PATCH(req: Request) {
   const { data, error } = await auth.db.from('products').update(patch).eq('id', id).select('id,slug,name,name_en,price,active,track_stock,stock_quantity').maybeSingle();
   if (error) { console.error('admin menu update failed:', error.message); return NextResponse.json({ error: 'Menu gagal diperbarui.' }, { status: 500 }); }
   if (!data) return NextResponse.json({ error: 'Menu tidak ditemukan.' }, { status: 404 });
-  return NextResponse.json({ product: data });
+  return NextResponse.json({ product: data }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
 }
 
 export async function DELETE(req: Request) {

@@ -15,19 +15,28 @@ export function PublicMenu({ featured = false }: { featured?: boolean }) {
 
   useEffect(() => {
     let alive = true;
-    fetch('/api/menu', { cache: 'no-store' })
-      .then(async (response) => {
+    let firstLoad = true;
+    const refresh = async () => {
+      try {
+        const response = await fetch('/api/menu', { cache: 'no-store' });
         if (!response.ok) throw new Error('menu_unavailable');
-        return response.json();
-      })
-      .then((data) => {
+        const data = await response.json();
         if (!alive) return;
         setProducts(Array.isArray(data.products) ? data.products : []);
         setCategories(Array.isArray(data.categories) ? data.categories : []);
-      })
-      .catch(() => { if (alive) setFailed(true); })
-      .finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
+        setFailed(false);
+      } catch {
+        if (alive && firstLoad) setFailed(true);
+      } finally {
+        if (alive && firstLoad) { setLoading(false); firstLoad = false; }
+      }
+    };
+    void refresh();
+    const onFocus = () => { if (document.visibilityState === 'visible') void refresh(); };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void refresh(); }, 30000);
+    return () => { alive = false; window.clearInterval(interval); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus); };
   }, []);
 
   const visible = useMemo(() => {
