@@ -11,7 +11,7 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE current_stock integer; next_stock integer; movement_qty integer;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.admin_users a WHERE a.user_id=p_admin_user_id AND a.active=true) THEN RAISE EXCEPTION 'ADMIN_REQUIRED'; END IF;
-  IF p_movement_type NOT IN ('in','out','adjustment') OR p_quantity IS NULL OR p_quantity < 1 THEN RAISE EXCEPTION 'INVALID_STOCK_CHANGE'; END IF;
+  IF p_movement_type NOT IN ('in','out','adjustment') OR p_quantity IS NULL OR p_quantity < 0 OR (p_movement_type IN ('in','out') AND p_quantity = 0) THEN RAISE EXCEPTION 'INVALID_STOCK_CHANGE'; END IF;
   SELECT stock_quantity INTO current_stock FROM public.products WHERE id=p_product_id AND track_stock=true FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'TRACKED_PRODUCT_NOT_FOUND'; END IF;
   IF p_movement_type='in' THEN next_stock:=current_stock+p_quantity; movement_qty:=p_quantity;

@@ -37,7 +37,7 @@ export async function PATCH(req: Request) {
   const { data, error } = await auth.db.rpc('admin_update_order_status', { p_order_id: id, p_new_status: status, p_admin_user_id: auth.userId });
   if (error) {
     console.error('admin_update_order_status failed:', error.message);
-    return NextResponse.json({ error: error.message.includes('INSUFFICIENT_STOCK') ? 'Stok tidak mencukupi. Pesanan belum dikonfirmasi.' : 'Status pesanan gagal diubah. Periksa status pesanan dan migrasi database.' }, { status: 409 });
+    return NextResponse.json({ error: error.message.includes('INSUFFICIENT_STOCK') ? 'Stok tidak mencukupi. Pesanan belum dikonfirmasi.' : error.message.includes('PAYMENT_NOT_VERIFIED') ? 'Verifikasi pembayaran transfer/QRIS terlebih dahulu sebelum mengonfirmasi pesanan.' : 'Status pesanan gagal diubah. Periksa status pesanan dan migrasi database.' }, { status: 409 });
   }
   return NextResponse.json({ success: true, order: data });
 }

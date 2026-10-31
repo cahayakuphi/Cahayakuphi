@@ -14,7 +14,7 @@ export async function GET() {
   const db = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await db
     .from('products')
-    .select('id,category_id,name,name_en,description,description_en,price,image_url,active,track_stock,stock_quantity,categories(id,name,name_en,active)')
+    .select('id,slug,category_id,name,name_en,description,description_en,price,image_url,active,track_stock,stock_quantity,categories(id,name,name_en,active)')
     .eq('active', true)
     .order('name');
 

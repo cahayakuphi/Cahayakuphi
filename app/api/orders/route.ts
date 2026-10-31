@@ -35,11 +35,15 @@ export async function POST(req: Request) {
     }
 
     const [{ data: settings, error: settingsError }, { data: dbProducts, error: productError }] = await Promise.all([
-      supabase.from('store_settings').select('store_name,whatsapp,address,delivery_fee,accepting_orders').eq('id', 1).maybeSingle(),
+      supabase.from('store_settings').select('store_name,whatsapp,address,delivery_fee,accepting_orders,enabled_payment_methods,enabled_order_types').eq('id', 1).maybeSingle(),
       supabase.from('products').select('id,slug,name,name_en,price,active,track_stock,stock_quantity').in('slug', uniqueSlugs),
     ]);
     if (settingsError || !settings) return jsonError('Layanan pemesanan sedang tidak tersedia. Silakan coba kembali nanti.', 503);
     if (!settings.accepting_orders) return jsonError('Penerimaan pesanan online sedang dinonaktifkan. Silakan hubungi admin Cahaya Kuphi.', 503);
+    const allowedPayments = Array.isArray(settings.enabled_payment_methods) ? settings.enabled_payment_methods : ['cash','transfer','qris'];
+    const allowedOrderTypes = Array.isArray(settings.enabled_order_types) ? settings.enabled_order_types : ['delivery','pickup'];
+    if (!allowedPayments.includes(customer.payment)) return jsonError('Metode pembayaran ini sedang tidak tersedia.', 400);
+    if (!allowedOrderTypes.includes(mode)) return jsonError('Tipe pesanan ini sedang tidak tersedia.', 400);
     if (productError || !dbProducts || dbProducts.length !== uniqueSlugs.length) return jsonError('Sebagian menu sedang tidak tersedia. Silakan perbarui keranjang.', 409);
 
     const productIds = (dbProducts || []).map((p: any) => p.id);

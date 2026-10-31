@@ -82,6 +82,11 @@ export async function PATCH(req: Request) {
   }
   const patch: Record<string, unknown> = {};
   if (typeof b?.active === 'boolean') patch.active = b.active;
+  if (b?.name !== undefined) { const v = clean(b.name); if (!v) return NextResponse.json({ error: 'Nama menu wajib diisi.' }, { status: 400 }); const nextSlug=slugify(v); const {data:dup,error:dupError}=await auth.db.from('products').select('id').eq('slug',nextSlug).neq('id',id).maybeSingle(); if(dupError)return NextResponse.json({error:'Slug menu gagal diperiksa.'},{status:500}); if(dup)return NextResponse.json({error:'Nama menu menghasilkan slug yang sudah digunakan.'},{status:409}); patch.name = v; patch.slug = nextSlug; }
+  if (b?.name_en !== undefined) patch.name_en = clean(b.name_en) || null;
+  if (b?.description !== undefined) patch.description = clean(b.description, 1000) || null;
+  if (b?.description_en !== undefined) patch.description_en = clean(b.description_en, 1000) || null;
+  if (b?.category_id !== undefined) { if (!/^[0-9a-f-]{36}$/i.test(clean(b.category_id,64))) return NextResponse.json({ error: 'Kategori tidak valid.' }, { status: 400 }); patch.category_id = b.category_id; }
   if (b?.image_url !== undefined) { const image = clean(b.image_url, 2000); if (image && !/^https:\/\//i.test(image)) return NextResponse.json({ error: 'URL foto harus menggunakan HTTPS.' }, { status: 400 }); patch.image_url = image || null; }
   if (b?.price !== undefined) {
     const price = Number(b.price);
@@ -103,4 +108,23 @@ export async function PATCH(req: Request) {
   if (error) { console.error('admin menu update failed:', error.message); return NextResponse.json({ error: 'Menu gagal diperbarui.' }, { status: 500 }); }
   if (!data) return NextResponse.json({ error: 'Menu tidak ditemukan.' }, { status: 404 });
   return NextResponse.json({ product: data });
+}
+
+export async function DELETE(req: Request) {
+  const auth = await requireAdmin(req);
+  if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  let b: any; try { b = await req.json(); } catch { return NextResponse.json({ error: 'Format data tidak valid.' }, { status: 400 }); }
+  const id = clean(b?.id, 64);
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: 'ID data tidak valid.' }, { status: 400 });
+  if (b?.type === 'category') {
+    const { count, error: countError } = await auth.db.from('products').select('id', { count: 'exact', head: true }).eq('category_id', id);
+    if (countError) return NextResponse.json({ error: 'Kategori tidak dapat diperiksa.' }, { status: 500 });
+    if ((count || 0) > 0) return NextResponse.json({ error: 'Kategori masih digunakan produk. Pindahkan atau hapus produk terlebih dahulu.' }, { status: 409 });
+    const { error } = await auth.db.from('categories').delete().eq('id', id);
+    if (error) return NextResponse.json({ error: 'Kategori gagal dihapus.' }, { status: 500 });
+    return NextResponse.json({ success: true });
+  }
+  const { error } = await auth.db.from('products').delete().eq('id', id);
+  if (error) { const { error: archiveError } = await auth.db.from('products').update({ active: false, updated_at: new Date().toISOString() }).eq('id', id); if (archiveError) return NextResponse.json({ error: 'Menu gagal dihapus atau dinonaktifkan.' }, { status: 409 }); return NextResponse.json({ success: true, archived: true }); }
+  return NextResponse.json({ success: true });
 }
